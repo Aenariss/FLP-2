@@ -66,23 +66,51 @@ split_list_into_lens([H|T], Len, [LstSplit|Lsts]) :-
     split_list_into_lens(LstRemainder, Len, Lsts).
 */
 
+/** Ziskej prvek na pasce podle indexu */
+tapeState(T, I, X) :- nth0(I, T, X).
+
+/** Funkce, ktera prochazi pasku znak po znaku a na zaklade aktualniho znaku na zaklade pravidel hleda vystup 
+Spoleham na Prolog, ze bude prochazett a backtrackovat*/
+
+goThroughTape(_, Tape, Ind) :- length(Tape, Length), Ind >= Length, !. % Jen docasne, vetsi ez toto znamena ze prida mezeru, realny konec je jen s F stavem.. i kdy co kdyz to da False at pomuzu prologu?
+goThroughTape(State, _, _) :- Symbol == "F", !.
+goThroughTape(State, Tape, Ind) :- 
+    length(Tape, Length),
+    Ind < Length,
+    tapeState(Tape, Ind, CurrSymbol),
+    nth0(Ind, NewTape, State, Tape), % Vlozeni na zadany index, Tape je muj vysledek a NewTape je, odkud jsem symbol vzal, jdu odzadu
+    atomics_to_string(NewTape, WriteNewTape),
+    write(WriteNewTape),
+    nl,
+
+    rule(State, CurrSymbol, NewState, NewSymbol),
+    findIndex(NewSymbol, Ind, NewIndex), % Najiti noveho indexu, bud je to R nebo L nebo vracim puvodni
+    changeTape(NewSymbol, Ind, Tape, NewTape), % Nahrazeni znaku na pasce (pokud to neni L nebo R) na danem indexu
+
+
+    goThroughTape(NewState, NewTape, NewIndex).
+
+/** Tady mit nejaky citac, ktery zacina na 0 a pokud mam L, jde -1, pokud R, +1.  
+Ziskam si stav na jaky dojdu, to bude muj novy stav a taky si najdu symbol, ktery je novy, podle toho se zachovam (posunu index, nahradim...)*/
+
 start :-
-        /** Cteni vstupu */
-		prompt(_, ''),
-		read_lines(LL),
-        /*****************/
+    /** Cteni vstupu */
+	prompt(_, ''),
+	read_lines(LL),
+    /*****************/
 
-        /** Tvorba Pravidel */
-        listWithoutLast(LL, InputRules),
-        goThroughListRemoveSpaces(InputRules, Rules),
-        createRules(Rules),
-        /********************/
+    /** Tvorba Pravidel */
+    listWithoutLast(LL, InputRules),
+    goThroughListRemoveSpaces(InputRules, Rules),
+    createRules(Rules),
+    /********************/
 
-        /** Beh TS */
-        getLast(LL, Tape),
+    /** Beh TS */
+    getLast(LL, Tape),
 
-        % zavolani funkce co dostane vstup a bude volat pravidla podle vstupu a aktualniho stavu (prvni je S)
+    % zavolani funkce co dostane vstup a bude volat pravidla podle vstupu a aktualniho stavu (prvni je S)
+    goThroughTape("S", Tape, 0), % 0 reprezentuje prvni znak na pasce, kterym zpracovavani zacina
 
-        %write(LL),
-		write(Rules),
-		halt.
+    %write(LL),
+	%write(Rules),
+	halt.
