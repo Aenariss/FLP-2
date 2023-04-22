@@ -121,8 +121,8 @@ readResults([[H]|T]) :-
 /** Ridici funkce, ktera to cele zacne */
 start :-
     /** Cteni vstupu */
-	prompt(_, ''),
-	read_lines(LL),
+    prompt(_, ''),
+    read_lines(LL),
     /*****************/
 
     /** Tvorba Pravidel */
@@ -139,4 +139,4 @@ start :-
     /* Vypis konfiguraci pasky */
     readResults(Configs),
     /***************************/
-	halt.
+    halt.
