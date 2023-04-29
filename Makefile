@@ -5,7 +5,7 @@ TESTRUN=tests/run.sh
 .PHONY: all pack test
 
 all:
-	swipl -q -g start -o $(TARGET) -c $(SOURCE)
+	swipl -t halt -q -g start -o $(TARGET) -c $(SOURCE)
 
 test:
 	$(MAKE)

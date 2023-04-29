@@ -87,28 +87,31 @@ changeTape(NewSymbol, Ind, MaxIndex, [_|TapeTail], [NewSymbol|NewTape]) :-
 addState(Ind, NewTape, State, Tape) :- nth0(Ind, NewTape, State, Tape).
 
 /** Prochazeni veskerych stavu, ktere je mozne dosahnout, a s vyuzitim backtrackingu navrat cesty k finalnimu */
-goThroughTape(State, Tape, Ind, [[WriteNewTape]]) :- 
+goThroughTape(State, Tape, _, _, Ind, [[WriteNewTape]]) :- 
     State == 'F', 
     addState(Ind, NewTape, State, Tape), % Vlozeni na zadany index, Tape je muj vysledek a NewTape je, odkud jsem symbol vzal, jdu odzadu
     atom_string(NewTape, WriteNewTape),
     !.
-goThroughTape(State, Tape, Ind, [[WriteNewTape]|Configs]) :- 
+goThroughTape(State, Tape, PrevTape, PrevPrevTape, Ind, [[WriteNewTape]|Configs]) :- 
     length(Tape, Length),
     tapeSymbol(Tape, Ind, CurrSymbol),
     addState(Ind, NewTape, State, Tape),
     atom_string(NewTape, WriteNewTape),
+
+    PrevTape \= WriteNewTape,
+    PrevPrevTape \= WriteNewTape, % Pojistka proti zaseknuti v prologovskem DFS vyhodnocovani
 
     rule(State, CurrSymbol, NewState, NewSymbol),
     findIndex(NewSymbol, Ind, NewIndex), % Najiti noveho indexu, bud je to R nebo L nebo vracim puvodni
     ( NewSymbol \= 'R' -> 
             ( NewSymbol \= 'L' -> 
                 changeTape(NewSymbol, NewIndex, Length, Tape, EditedTape), % Nahrazeni znaku na pasce (pokud to neni L nebo R) na danem indexu
-                goThroughTape(NewState, EditedTape, NewIndex, Configs)
+                goThroughTape(NewState, EditedTape, WriteNewTape, PrevTape, NewIndex, Configs)
                 ; 
-                goThroughTape(NewState, Tape, NewIndex, Configs)
+                goThroughTape(NewState, Tape, WriteNewTape, PrevTape, NewIndex, Configs)
             ) 
         ; 
-        goThroughTape(NewState, Tape, NewIndex, Configs)
+        goThroughTape(NewState, Tape, WriteNewTape, PrevTape, NewIndex, Configs)
     ).
 
 /** Vypis vsech ziskanych stavu TS, ktere jsou ve forme 2D pole */
@@ -118,12 +121,14 @@ readResults([[H]|T]) :-
     nl,
     readResults(T).
 
-/** Ridici funkce, ktera to cele zacne */
+/** Rizeni programu */
 start :-
     /** Cteni vstupu */
     prompt(_, ''),
     read_lines(LL),
     /*****************/
+
+    !, % pokud dostanu abnormalni zastaveni, prolog backtrackingem dojde zpet sem - nezacne cist znovu, skonci
 
     /** Tvorba Pravidel */
     listWithoutLast(LL, InputRules),
@@ -133,7 +138,8 @@ start :-
 
     /** Beh TS */
     lastElem(LL, Tape), % Posledni na vstupu je paska
-    goThroughTape('S', Tape, 0, Configs), % 0 reprezentuje prvni znak na pasce, kterym zpracovavani zacina. S je prvni stav.
+    % split_list(Tape, TmpTape),
+    goThroughTape('S', Tape, Tape, Tape, 0, Configs), % 0 reprezentuje prvni znak na pasce, kterym zpracovavani zacina. S je prvni stav.
     /***********/
 
     /* Vypis konfiguraci pasky */

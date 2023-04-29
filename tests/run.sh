@@ -3,22 +3,22 @@
 ## Idealne spustene pres `make test`
 
 tmpfile="./tests/tmp"
-n_tests=6
+n_tests=12
 tests=1
 pass=0
 
 for i in $(seq 1 $n_tests) 
 do
     tests=$((tests+1))
-    ./flp22-log < "tests/input$n_tests.txt" > $tmpfile
-    diff "tests/expected$n_tests.txt" $tmpfile
+    ./flp22-log < "tests/input$i.txt" > $tmpfile
+    diff "tests/expected$i.txt" $tmpfile
     if [ $? == 0 ]; then # test passed, diff returns 0 on same res
         pass=$((pass+1))
         echo "Test $i passed"
     else
         echo "Test $i failed"
     fi
-    echo "tests/input$n_tests"
+    echo "Running test - tests/input$i"
 done
 
 rm $tmpfile

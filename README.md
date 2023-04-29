@@ -11,12 +11,14 @@ Testy (a také testovací vstupy a očekávané výstupy), na kterých bylo ře�
 Jejich spuštění je možné z kořenového adresáře příkazem *make test*. 
 
 ## Popis řešení
+Pro úspěšně spuštění je nutné, aby vstup byl ve formátu LF (tedy windowsovské CRLF nedokáže zparsovat).
+
 Řešení využívá poskytnuté predikáty pro načítání vstupu.
 Z těch následně odstraní poslední řádek (očekávanou pásku), z jednotlivých řádků odstraní mezery ať každý řádek obsahuje pouze 4 znaky a dynamicky přidá jednotlivé řádky jako pravidla.
 
 Následně získá poslední řádek, který je chápán jako páska, kterou předá dále ke zpracaování.
 
-V každé rekurzivní iteraci získá aktuální čtený symbol pásky, vloží do pásky aktuální stav a tento výstup přidá v případě nalezení finálního stavu do výstupního seznamu posloupností.
+V každé rekurzivní "iteraci" získá aktuální čtený symbol pásky, vloží do pásky aktuální stav a tento výstup přidá v případě nalezení finálního stavu do výstupního seznamu posloupností.
 
 Následně získá na základě aktuálního stavu a znaku z množiny pravidel další možné stavy a znaky.
 
@@ -28,23 +30,17 @@ V případě, že dojde do koncového stavu, tedy na vstupu má stav *F*, získ�
 
 Seznam obsahující výsledné konfigurace pásky se nakonec výpíše na výstup.
 
+Pokud dojde k abnormálnímu zastavení (není kam přejít z aktuálního stavu a ten zároveň není koncovým), program končí a nevypisuje nic.
+
+Pokud dojde k tomu, že by se TS měl zacyklit, konkrétně např. se vstupem níže (viz tests/input12.txt), program to detekuje tím, že porovnává 2 předchozí pásky s aktuální páskou a pokud najde shodu, tak větev výpočtu skončí a backtrackingem zkusí jinou. Jelikož ve vstupu níže žádná "jiná" větev není, tak program obdobně jako v případě abnormálního zastavení končí a nevypisuje nic.
+```
+S a S a
+aaaaaaaaaaa
+```
+
 ## Omezení
 Program funguje pouze na validní vstupy - očekává, že zadaná pravidla budou obsahovat posloupnost od startujícího (S) stavu až do cílového (F) stavu.
-Pokud tato posloupnost nalezena není, program cyklí.
-Program očekává, že formát pravidel bude validní (Stav, znak, NovýStav, NovýZnak|R|L).
+
+Program očekává, že formát pravidel bude validní (Stav, znak, NovýStav, NovýZnak|R|L) - tak, jak je uvedeno v zadání.
 
 Obdobně program předpokládá, že na posledním řádku vstupu bude páska, za kterou ještě může (a nemusí) následovat newline.
-
-V případě, kdy může TS nekonečně cyklit a pravidla jsou zadána v "nevhodném" pořadí, tak se zacyklí a po chvíli se program ukončí s hláškou "Out of local stack", tedy došlo místo na stacku. Konkrétně jde například o pravidla a pásku ve tvaru:
-```
-S a S a
-S a F c
-aa
-```
-
-K cyklení nedojde, pokud jsou pravidla v souboru zapsána ve správném pořadí. Prolog je vyhodnocuje v pořadí, v jakém jsou zapsané (a v jakém podle nich vytvořil dynamické predikáty), takže se nezacyklí, přestože by podle pravidel mohl. To ilustruje případ obdobný předchozímu, ovšem funkční:
-```
-S a F c
-S a S a
-aa
-```
