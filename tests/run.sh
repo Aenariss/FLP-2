@@ -3,7 +3,7 @@
 ## Idealne spustene pres `make test`
 
 tmpfile="./tests/tmp"
-n_tests=12
+n_tests=14
 tests=1
 pass=0
 

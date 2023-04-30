@@ -19,12 +19,6 @@ read_lines(Ls) :-
 	  read_lines(LLs), Ls = [L|LLs]
 	).
 
-/** Odstran zbytecne mezery (v pravidlech) */
-removeSpaces([], []).
-removeSpaces([" "|Tail], Res) :- removeSpaces(Tail, Res).
-removeSpaces([' '|Tail], Res) :- removeSpaces(Tail, Res).
-removeSpaces([H|Tail], [H|Res]) :- removeSpaces(Tail, Res).
-
 /** Posledni prvek listu, pro ziskani pasky */
 lastElem([X], X).
 lastElem([_|T], X) :- lastElem(T, X).
@@ -33,12 +27,12 @@ lastElem([_|T], X) :- lastElem(T, X).
 listWithoutLast([_], []).
 listWithoutLast([H|T], [H|Res]) :- listWithoutLast(T, Res).
 
-/** Pridani "dimenze" seznamu -> [a] -> [[a]] */
-addDimension(X, [X]).
+/** Ziskej ze vstupu array pouze s uzitecnymi symboly. Predpoklada validni vstupy */
+getSingleRule([State, _, Symb, _, NewState, _, NewSymb], [State,Symb,NewState,NewSymb]).
 
-/** Projiti seznamu a vraceni jeho upravene verze*/
-goThroughListRemoveSpaces([], []).
-goThroughListRemoveSpaces([H|T], Res) :- call(removeSpaces, H, NoSpace), goThroughListRemoveSpaces(T, X), addDimension(NoSpace, Y), append(Y, X, Res).
+/** Uprav nactena pravidla do zpracovatelne formy (ignoruj zbytecne mezery) */
+editRules([], []).
+editRules([H|T], [X|Res]) :- getSingleRule(H, X), editRules(T, Res).
 
 /** Dynamicke pravidlo */
 :- dynamic rule/4.
@@ -55,12 +49,10 @@ tapeSymbol(T, I, X) :- nth0(I, T, X).
 
 /** Urceni noveho indexu podle R nebo L */
 findIndex(Symbol, Ind, NewInd) :-
-    (
-        Symbol == 'R' ->
+    ( Symbol == 'R' ->
         NewInd is Ind + 1
         ;
-        ( 
-            Symbol == 'L' ->
+        ( Symbol == 'L' ->
             NewInd is Ind - 1 
             ;
             NewInd is Ind
@@ -95,23 +87,31 @@ goThroughTape(State, Tape, _, _, Ind, [[WriteNewTape]]) :-
 goThroughTape(State, Tape, PrevTape, PrevPrevTape, Ind, [[WriteNewTape]|Configs]) :- 
     length(Tape, Length),
     tapeSymbol(Tape, Ind, CurrSymbol),
+
+    rule(State, CurrSymbol, NewState, NewSymbol),
+    findIndex(NewSymbol, Ind, NewIndex), % Najiti noveho indexu, bud je to R nebo L nebo vracim puvodni
+
+    ( NewIndex >= Length -> % Pridani blanku na konec, prekrocil jsem puvodni pasku
+        append(Tape, [' '], NextTape)
+        ;
+        NextTape = Tape
+    ),
+
     addState(Ind, NewTape, State, Tape),
     atom_string(NewTape, WriteNewTape),
 
     PrevTape \= WriteNewTape,
-    PrevPrevTape \= WriteNewTape, % Pojistka proti zaseknuti v prologovskem DFS vyhodnocovani
+    PrevPrevTape \= WriteNewTape, % Pojistka proti zaseknuti behem zanorovani
 
-    rule(State, CurrSymbol, NewState, NewSymbol),
-    findIndex(NewSymbol, Ind, NewIndex), % Najiti noveho indexu, bud je to R nebo L nebo vracim puvodni
     ( NewSymbol \= 'R' -> 
             ( NewSymbol \= 'L' -> 
-                changeTape(NewSymbol, NewIndex, Length, Tape, EditedTape), % Nahrazeni znaku na pasce (pokud to neni L nebo R) na danem indexu
+                changeTape(NewSymbol, NewIndex, Length, NextTape, EditedTape), % Nahrazeni znaku na pasce (pokud to neni L nebo R) na danem indexu
                 goThroughTape(NewState, EditedTape, WriteNewTape, PrevTape, NewIndex, Configs)
                 ; 
-                goThroughTape(NewState, Tape, WriteNewTape, PrevTape, NewIndex, Configs)
+                goThroughTape(NewState, NextTape, WriteNewTape, PrevTape, NewIndex, Configs)
             ) 
         ; 
-        goThroughTape(NewState, Tape, WriteNewTape, PrevTape, NewIndex, Configs)
+        goThroughTape(NewState, NextTape, WriteNewTape, PrevTape, NewIndex, Configs)
     ).
 
 /** Vypis vsech ziskanych stavu TS, ktere jsou ve forme 2D pole */
@@ -132,13 +132,12 @@ start :-
 
     /** Tvorba Pravidel */
     listWithoutLast(LL, InputRules),
-    goThroughListRemoveSpaces(InputRules, Rules),
+    editRules(InputRules, Rules),
     createRules(Rules),
     /********************/
 
     /** Beh TS */
     lastElem(LL, Tape), % Posledni na vstupu je paska
-    % split_list(Tape, TmpTape),
     goThroughTape('S', Tape, Tape, Tape, 0, Configs), % 0 reprezentuje prvni znak na pasce, kterym zpracovavani zacina. S je prvni stav.
     /***********/
 

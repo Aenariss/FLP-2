@@ -14,7 +14,7 @@ Jejich spuštění je možné z kořenového adresáře příkazem *make test*.
 Pro úspěšně spuštění je nutné, aby vstup byl ve formátu LF (tedy windowsovské CRLF nedokáže zparsovat).
 
 Řešení využívá poskytnuté predikáty pro načítání vstupu.
-Z těch následně odstraní poslední řádek (očekávanou pásku), z jednotlivých řádků odstraní mezery ať každý řádek obsahuje pouze 4 znaky a dynamicky přidá jednotlivé řádky jako pravidla.
+Z těch následně odstraní poslední řádek (očekávanou pásku), z jednotlivých řádků odstraní mezery mezi načítanými symboluy tak, ať každý řádek obsahuje pouze 4 znaky a dynamicky přidá jednotlivé symboly na řádcích jako pravidla.
 
 Následně získá poslední řádek, který je chápán jako páska, kterou předá dále ke zpracaování.
 
@@ -29,6 +29,12 @@ Následně se rekurzivně spustí s novou páskou a novým stavem. Pokud byl v p
 V případě, že dojde do koncového stavu, tedy na vstupu má stav *F*, získá finální konfiguraci pásky a vloží ji do seznamu, který vrátí. Rekurzivně se do něj poté přidají i další konfigurace, které k výsledku vedly.
 
 Seznam obsahující výsledné konfigurace pásky se nakonec výpíše na výstup.
+
+V případě, že TS dojde na poslední symbol pásky (před nekonečnou posloupností symbolů blank), tedy vstup bude např jako níže, přidá tento symbol blank pod "hlavu" jako aktuální čtený symbol a blank v podobě mezery bude tedy součástí výstupní posloupnosti: Sa -> aF*, kde * značí mezeru, ovšem na výstupu bude skutečná mezera, zde je symbol * pouze ilustrativní pro lepší čitelnost.
+```
+S a F R
+a
+```
 
 Pokud dojde k abnormálnímu zastavení (není kam přejít z aktuálního stavu a ten zároveň není koncovým), program končí a nevypisuje nic.
 
